@@ -90,11 +90,14 @@ def detect_dupes(srcdir):
                     # Parse the libs
                     song = taglib.File(path)
 
-                    # Get song title
+                    # Get song title & author
                     title = song.tags["TITLE"][0]
+                    artist = song.tags["ARTIST"][0]
                     
                     # Clean it
                     title = clean_music_title(title)
+
+                    title = "{} - {}".format(title, artist.lower())
 
                     log.debug("Checking if '{}' is a dupe".format(title))
 
