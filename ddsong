@@ -1,0 +1,64 @@
+#!/bin/env python3
+import argparse
+import os
+from signal import signal, SIGPIPE, SIG_DFL, getsignal
+
+from ddsongs.dupsongdetector import DupSongDetector
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description="This program detects duplicate music files, using their tags.")
+
+    add_arguments(parser)
+
+    args = parser.parse_args()
+
+    return args
+
+
+def add_arguments(parser):
+    # Verbosity
+    parser.add_argument("-v", "--verbose", help="Increase verbosity for each ocurrence.",
+                        # True/False value, always
+                        action="store_true",
+                        default=False)
+
+    # Version
+    parser.add_argument("-V", "--version", action="version", version="%(prog)s 1.0")
+
+    # Source directory
+    parser.add_argument("srcdir", help="Source directory to search recursively for duplicate music files.",
+                        # 0 or 1 argument
+                        nargs="?",
+                        # If folder is valid, continue
+                        type=lambda d: is_valid_srcfolder(parser, d),
+                        # Defaults to user's relative '.' path
+                        default=os.getcwd())
+
+
+# Checks if a path exists
+def is_valid_srcfolder(parser, path):
+    if not os.path.exists(path):
+        parser.error("'{}' doesn't exists".format(path))
+
+    return os.path.abspath(path)
+
+
+if __name__ == "__main__":
+    args = get_args()
+
+    log_level = 0
+    if args.verbose:
+        log_level = 10
+
+    # Instantiates a detector
+    detector = DupSongDetector(args.srcdir, log_level)
+
+    # Get the duplicate files
+    duplicates = detector.detect_dupes()
+
+    # We want to be able to pipe output
+    # https://stackoverflow.com/a/30091579
+    signal(SIGPIPE, SIG_DFL)
+    print(' '.join(duplicates))
